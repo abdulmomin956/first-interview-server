@@ -7,9 +7,10 @@ const path = require('path');
 app.use(express.json());
 app.use(cors())
 
-// app.get('/', (req, res) => {
-//     res.send('running the server with ' + port)
-// })
+const usePages = {
+    pages: 1,
+    setPages: function (data) { this.pages = data }
+}
 
 app.use('/', require('./routes/root'))
 
@@ -23,19 +24,22 @@ app.post('/v1/api/login', (req, res) => {
 //backend pagination api
 app.get('/api/v1/model', async (req, res) => {
     const { page, limit } = req.query;
-    // console.log(page, limit);
+    usePages.setPages(page)
     const data = require('./model/data.json')
     const totalItemsNumber = data.length;
-    const lowerLimit = page * limit - limit;
-    const upperLimit = page * limit;
-    // console.log(totalItemsNumber);
-    const num_pages = totalItemsNumber / limit;
+    const num_pages = Math.ceil(totalItemsNumber / limit);
+    if (usePages.pages > num_pages) {
+        usePages.setPages(num_pages)
+    }
+    const lowerLimit = usePages.pages * limit - limit;
+    const upperLimit = usePages.pages * limit;
+    console.log(totalItemsNumber);
     const items = data.slice(lowerLimit, upperLimit)
     res.send({
         "list": items,
         "num_pages": num_pages,
-        "page": page,
-        "limit": limit
+        "page": parseInt(usePages.pages),
+        "limit": parseInt(limit)
     }
     )
 })
